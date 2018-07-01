@@ -1,0 +1,296 @@
+﻿@using System.Security.Claims
+@using Curnik.Enums
+@model Curnik.Models.Database.Rooms
+@{
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+</head>
+<body>
+    <div id="alert-div" style="position: absolute; margin-left: 300px; width: 500px;"></div>
+
+    <div class="row text-center" style="margin-top: 200px;">
+        <div style="color: white; font-size: 40px; text-decoration: none" class="col-lg-5">
+            <strong>Ty:</strong>
+            <a id="client"></a>
+            <strong>Przeciwnik:</strong>
+            <a id="remote"></a>
+            <div id="game-board" style="display: none;">
+                <button id="button1" style="background-color: white; width: 100px; height: 100px;" onclick="buttonClicked(1)"><img src="/images/rock.jpg" width="70" height="70" /></button>
+                <button id="button2" style="background-color: white; width: 100px; height: 100px;" onclick="buttonClicked(2)"><img src="/images/paper.png" width="70" height="70" /></button>
+                <button id="button3" style="background-color: white; width: 100px; height: 100px;" onclick="buttonClicked(3)"><img src="/images/scissors.png" width="70" height="70" /></button><br />
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div id="chatbox" style="text-align: left; background: white; color: black; height: 270px; width: 430px; border: 2px solid black; overflow: auto;">
+                <ul id="discussion"></ul>
+            </div>
+            <div>
+                <textarea id="message-box" style="width: 430px; border: 2px solid black; margin-left: -26px; resize: none"></textarea>
+            </div>
+            <button class="btn btn-success" style="margin-left: -380px;" id="signalTest">WYŚLIJ</button>
+            @{
+                switch (Model.GameState)
+                {
+                    case (int)GameState.WaitingForPlayer:
+                        if (Model.RoomOwnerId.ToString() != userId)
+                        {
+                            <div><button id="join-game" class="btn btn-success" style="margin-left: -160px; margin-top: -55px;">Dołącz do gry</button></div>
+                        }
+                        break;
+
+                    case (int)GameState.InProggress:
+                        <div><label>Pokoj ma max graczy</label></div>
+                        break;
+
+                    case (int)GameState.Finished:
+                        break;
+
+                    case (int)GameState.LostConnection:
+                        break;
+                }
+            }
+        </div>
+        <div class="col-md-2">
+            @{
+                Model.GameState = (int)GameState.InProggress;
+
+                if (Model.GameState == (int)GameState.WaitingForPlayer)
+                {
+                    <div> <button class="btn btn-primary">Dolacz do gry</button></div>
+                }
+            }
+        </div>
+    </div>
+    <a id="primarylabel"></a>
+    <link href="~/css/tictactoe.css" rel="stylesheet" />
+
+    @section scripts {
+        <script src="~/lib/jquery/dist/jquery.js"></script>
+        <script src="~/js/signalr.js"></script>
+
+        <script type="text/javascript">
+            var clientScore = 0;
+            var remotePlayerScore = 0;
+            var playerTurn = false;
+            var clientChoice;
+            var round = 0;
+            var remotePlayerChoice;
+            document.getElementById("client").innerHTML = clientScore;
+            document.getElementById("remote").innerHTML = remotePlayerScore;
+            var chatBox = document.getElementById("chatbox");
+            let connection = new signalR.HubConnectionBuilder()
+                .withUrl(`/apphub?roomId=${@Model.RoomId}&userId=${@userId}`).build();
+
+            connection.on("send",
+                data => {
+                    console.log(data);
+                });
+
+            connection.on("message",
+                (msg, sender) => {
+                    $('#discussion').append('<li><strong>' + sender + '</strong>&nbsp;&nbsp;' + msg + '</li>');
+                    document.getElementById("message-box").scrollTop =
+                        document.getElementById("message-box").scrollHeight;
+                });
+
+            connection.on("userJoin",
+                primary => {
+                    $('#discussion').append('<li><strong>' + primary + '</strong></li>');
+                });
+
+            connection.on("userQuit",
+                primary => {
+                    $('#discussion').append('<li><strong>' + primary + '</strong></li>');
+                });
+
+            connection.on("changeGameState",
+                gameState => {
+                    ChangeGameState(gameState);
+                });
+
+            connection.on("sendData",
+                (isFirstTurn, type) => {
+                    round++;
+                    remotePlayerChoice = type;
+
+                    if (isFirstTurn == true) {
+                        checkForWinners();
+                    }
+
+            if (round != 2) {
+                $('#discussion').append('<li><strong>Twój ruch</strong>&nbsp;&nbsp;</li>');
+                playerTurn = true;
+            } else {
+                checkForWinners();
+            }
+        });
+
+            connection.connectionSlow = function() {
+                GenerateAlert("Slow");
+            };
+
+            connection.disconnect = function() {
+                GenerateAlert("Disconnected");
+            };
+
+            connection.start().then(function() {
+                GenerateAlert("Connected");
+            });
+
+            $(document).ready(function() {
+            });
+
+            $("#signalTest").click(function() {
+                if ($("#message-box").val().length !== 0) {
+                    connection.send("SendMessage", $("#message-box").val());
+                    $("#message-box").val(null);
+                }
+            });
+
+            $("#join-game").click(function() {
+                connection.send("ChangeGameStateAsync", 1);
+                $("#join-game").fadeOut('slow');
+            });
+
+            function GenerateAlert(type) {
+                var division = document.getElementById("alert-div");
+                var content = document.createElement("strong");
+
+                division.appendChild(content);
+                division.classList.add("alert");
+                division.classList.add("alert-dismissible");
+                division.classList.add("text-center");
+
+                if (type === "Connected") {
+                    division.classList.add("alert-success");
+                    content.innerHTML = "Pomyślnie połączono z pokojem!";
+                } else if (type === "Disconnected") {
+                    division.classList.add("alert-danger");
+                    content.innerHTML = "Połączenie zostało gwałtownie zerwane!";
+                } else if (type === "Slow") {
+                    division.classList.add("alert-warning");
+                    content.innerHTML = "Uwaga! Połączenie jest bardzo wolne!";
+                }
+                $("#alert-div").delay(3000).fadeOut('slow');
+            }
+
+
+            if (@Model.RoomOwnerId !== @userId) {
+                var model =
+                {
+                    RoomId: @Model.RoomId,
+                    GameType: @Model.GameType,
+                    GameState: @Model.GameState,
+                    RoomOwnerId: @Model.RoomOwnerId,
+                    UsersAmount: @Model.UsersAmount
+                };
+                model = JSON.stringify(model);
+                console.log(model);
+
+                $.ajax({
+                    type: 'post',
+                    url: 'http://localhost:58128/api/RoomApi/connecttoroomasync',
+                    data: model,
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json"
+
+                }).done(function(model) {
+
+                }).fail(function(err) {
+                });
+            }
+
+            function ChangeGameState(gameState) {
+                var model =
+                {
+                    RoomId: @Model.RoomId,
+                    GameType: @Model.GameType,
+                    GameState: gameState,
+                    RoomOwnerId: @Model.RoomOwnerId,
+                    UsersAmount: @Model.UsersAmount
+                };
+            };
+
+            $("#game-board").fadeIn(1000);
+            model = JSON.stringify(model);
+
+            $.ajax({
+                type: 'put',
+                url: 'http://localhost:58128/api/RoomApi/changegamestateasync',
+                data: model,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json"
+
+            }).done(function(model) {
+
+            }).fail(function(err) {
+            });
+
+            //Game Methods
+            function buttonClicked(buttonNumber) {
+                if (playerTurn === true) {
+                    clientChoice = buttonNumber;
+                    round++;
+                    connection.send("SendGameData", false, buttonNumber);
+                    if (round == 2) {
+                        checkForWinners();
+                    }
+                    playerTurn = false;
+                } else {
+                    $('#discussion').append('<li><strong>Poczekaj na swoją kolej!</strong></li>');
+                }
+            }
+
+            function checkForWinners() {
+                // 1 r , 2 p , 3 s
+
+                if (clientChoice == 1 && remotePlayerChoice == 3) {
+                    $('#discussion').append('<li><strong>Wygrałeś!</strong>&nbsp;&nbsp;</li>');
+                    connection.send("SendGameData", true, 1);
+                    $('#discussion').append('<li><strong>Zaczynasz rundę</strong>&nbsp;&nbsp;</li>');
+                    clientScore++;
+                } else if (clientChoice == 3 && remotePlayerChoice == 1) {
+                    connection.send("SendGameData", true, 3);
+                    $('#discussion').append('<li><strong>Przegrałeś!</strong>&nbsp;&nbsp;</li>');
+                    remotePlayerScore++;
+                } else if (clientChoice == 2 && remotePlayerChoice == 1) {
+                    $('#discussion').append('<li><strong>Wygrałeś!</strong>&nbsp;&nbsp;</li>');
+                    connection.send("SendGameData", true, 2);
+                    $('#discussion').append('<li><strong>Zaczynasz rundę</strong>&nbsp;&nbsp;</li>');
+                    clientScore++;
+                } else if (clientChoice == 1 && remotePlayerChoice == 2) {
+                    connection.send("SendGameData", true, 1);
+                    $('#discussion').append('<li><strong>Przegrałeś!</strong>&nbsp;&nbsp;</li>');
+                    remotePlayerScore++;
+                } else if (clientChoice == 3 && remotePlayerChoice == 2) {
+                    $('#discussion').append('<li><strong>Wygrałeś!</strong>&nbsp;&nbsp;</li>');
+                    connection.send("SendGameData", true, 3);
+                    $('#discussion').append('<li><strong>Zaczynasz rundę</strong>&nbsp;&nbsp;</li>');
+                    clientScore++;
+                } else if (clientChoice == 2 && remotePlayerChoice == 3) {
+                    connection.send("SendGameData", true, 2);
+                    $('#discussion').append('<li><strong>Przegrałeś!</strong>&nbsp;&nbsp;</li>');
+                    remotePlayerScore++;
+                } else if (clientChoice == remotePlayerChoice) {
+                    $('#discussion').append('<li><strong>Remis!</strong>&nbsp;&nbsp;</li>');
+                    connection.send("SendGameData", true, clientChoice);
+                    clientScore++;
+                    remotePlayerScore++;
+                }
+                round = 0;
+                remotePlayerChoice = 0;
+                clientChoice = 0;
+                document.getElementById("client").innerHTML = clientScore;
+                document.getElementById("remote").innerHTML = remotePlayerScore;
+            }
+        </script>
+    }
+</body>
+</html>

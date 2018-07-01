@@ -1,0 +1,28 @@
+﻿@model Curnik.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Zarejestruj się";
+}
+
+
+<div class="text-center">
+    <h2 style="color: white">@ViewData["Title"]</h2>
+    <form asp-controller="UsersAccounts" asp-action="RegisterNewAccount" method="post">
+        <div asp-validation-summary="ModelOnly"></div>
+        <div>
+            <input class="form-control center-block" style="max-width: 300px; margin-bottom: 20px" asp-for="Username" placeholder="Login" />
+            <span asp-validation-for="Username" class="text-danger"></span>
+        </div>
+        <div>
+            <input class="form-control center-block" style="max-width: 300px; margin-bottom: 20px" asp-for="Email" placeholder="Email" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+        <div>
+            <input class="form-control center-block" style="max-width: 300px; margin-bottom: 20px" type="password" asp-for="Password" placeholder="Haslo" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+        <div>
+            <input class="form-control center-block" style="max-width: 300px; margin-bottom: 20px" asp-for="AccountDescription" placeholder="Opis Konta"/>
+        </div>
+        <button type="submit" style="border-color: white" class="btn btn-primary">Zarejestruj się</button>
+    </form>
+</div>

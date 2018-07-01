@@ -1,0 +1,356 @@
+﻿@using System.Security.Claims
+@using Curnik.Enums
+@model Curnik.Models.Database.Rooms
+@{
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+}
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+</head>
+<body>
+<div id="alert-div" style="position: absolute; margin-left: 300px; width: 500px;"></div>
+<div style="margin-top: 200px; padding-top: 20px;">
+        <div class="row text-center">
+            <div class="col-lg-5">
+                <div id="game-board" style="display: none; vertical-align: top; margin-top: -140px;">
+                    <table id="board">
+                        <tr>
+                            <td>
+                                <button id="button1" style="width: 100px; height: 100px;" onclick="buttonClicked(1)"></button>
+                            </td>
+                            <td>
+                                <button id="button2" style="width: 100px; height: 100px;" onclick="buttonClicked(2)"></button>
+                            </td>
+                            <td>
+                                <button id="button3" style="width: 100px; height: 100px;" onclick="buttonClicked(3)"></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button id="button4" style="width: 100px; height: 100px;" onclick="buttonClicked(4)"></button>
+                            </td>
+                            <td>
+                                <button id="button5" style="width: 100px; height: 100px;" onclick="buttonClicked(5)"></button>
+                            </td>
+                            <td>
+                                <button id="button6" style="width: 100px; height: 100px;" onclick="buttonClicked(6)"></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button id="button7" style="width: 100px; height: 100px;" onclick="buttonClicked(7)"></button>
+                            </td>
+                            <td>
+                                <button id="button8" style="width: 100px; height: 100px;" onclick="buttonClicked(8)"></button>
+                            </td>
+                            <td>
+                                <button id="button9" style="width: 100px; height: 100px;" onclick="buttonClicked(9)"></button>
+                            </td>
+                        </tr>
+                    </table>
+
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div id="chatbox" style="text-align: left; background: white; color: black; height: 270px; width: 430px; border: 2px solid black; overflow: auto;">
+                    <ul id="discussion"></ul>
+                </div>
+                <div>
+                    <textarea id="message-box" style="width: 430px; border: 2px solid black; margin-left: -26px; resize: none"></textarea>
+                </div>
+                <button class="btn btn-success" style="margin-left: -380px;" id="signalTest">WYŚLIJ</button>
+                @{
+                    switch (Model.GameState)
+                    {
+                        case (int)GameState.WaitingForPlayer:
+                            if (Model.RoomOwnerId.ToString() != userId)
+                            {
+                                <div><button id="join-game" class="btn btn-default" style="margin-top: 10px;">Dołącz do gry</button></div>
+                            }
+                            break;
+
+                        case (int)GameState.InProggress:
+                            <div><label>Pokoj ma max graczy</label></div>
+                            break;
+
+                        case (int)GameState.Finished:
+                            break;
+
+                        case (int)GameState.LostConnection:
+                            break;
+                    }
+                }
+            </div>
+            <div class="col-md-2">
+                @{
+                    Model.GameState = (int)GameState.InProggress;
+
+                    if (Model.GameState == (int)GameState.WaitingForPlayer)
+                    {
+                        <div> <button class="btn btn-primary">Dolacz do gry</button></div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+<a id="primarylabel"></a>
+<link href="~/css/tictactoe.css" rel="stylesheet"/>
+
+@section scripts {
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script src="~/js/signalr.js"></script>
+
+    <script type="text/javascript">
+
+        var chatBox = document.getElementById("chatbox");
+        let connection = new signalR.HubConnectionBuilder()
+            .withUrl(`/apphub?roomId=${@Model.RoomId}&userId=${@userId}`).build();
+
+        connection.on("send",
+            data => {
+                console.log(data);
+            });
+
+        connection.on("message",
+            (msg, sender) => {
+                $('#discussion').append('<li><strong>' + sender + '</strong>&nbsp;&nbsp;' + msg + '</li>');
+            });
+
+        connection.on("userJoin",
+            primary => {
+                $('#discussion').append('<li><strong>' + primary + '</strong></li>');
+            });
+
+        connection.on("userQuit",
+            primary => {
+                $('#discussion').append('<li><strong>' + primary + '</strong></li>');
+            });
+
+        connection.on("changeGameState",
+            gameState => {
+                ChangeGameState(gameState);
+            });
+
+        connection.on("sendData",
+            (isFirstTurn, field) => {
+
+                if (isFirstTurn) {
+                    clientMarkType = "O";
+                } else {
+                    thebutton = "button" + field;
+                    c = document.getElementById(thebutton);
+                    painted[field - 1] = true;
+                    squaresFilled++;
+                    if (clientMarkType == "O") {
+                        c.innerHTML = '<img src="/images/cross.jpg" width="70" height="70" />';
+                        content[field - 1] = 'X';
+                    } else {
+                        c.innerHTML = '<img src="/images/circle.jpg" width="70" height="70" />';
+                        content[field - 1] = 'O';
+                    }
+                    checkForWinners(content[field - 1]);
+
+                    $('#discussion').append('<li><strong>Twoj ruch!</strong></li>');
+                }
+                playerTurn = true;
+            });
+
+        connection.connectionSlow = function() {
+            GenerateAlert("Slow");
+        };
+
+        connection.disconnect = function() {
+            GenerateAlert("Disconnected");
+        };
+
+        connection.start().then(function() {
+            GenerateAlert("Connected");
+        });
+
+        $(document).ready(function() {
+        });
+
+        $("#signalTest").click(function() {
+            if ($("#message-box").val().length !== 0) {
+                connection.send("SendMessage", $("#message-box").val());
+                $("#message-box").val(null);
+            }
+        });
+
+        $("#join-game").click(function() {
+            connection.send("ChangeGameStateAsync", 1);
+            $("#join-game").fadeOut('slow');
+        });
+
+        function GenerateAlert(type) {
+            var division = document.getElementById("alert-div");
+            var content = document.createElement("strong");
+
+            division.appendChild(content);
+            division.classList.add("alert");
+            division.classList.add("alert-dismissible");
+            division.classList.add("text-center");
+
+            if (type === "Connected") {
+                division.classList.add("alert-success");
+                content.innerHTML = "Pomyślnie połączono z pokojem!";
+            } else if (type === "Disconnected") {
+                division.classList.add("alert-danger");
+                content.innerHTML = "Połączenie zostało gwałtownie zerwane!";
+            } else if (type === "Slow") {
+                division.classList.add("alert-warning");
+                content.innerHTML = "Uwaga! Połączenie jest bardzo wolne!";
+            }
+            $("#alert-div").delay(5000).fadeOut('slow');
+        }
+
+
+        if (@Model.RoomOwnerId !== @userId) {
+            var model =
+            {
+                RoomId: @Model.RoomId,
+                GameType: @Model.GameType,
+                GameState: @Model.GameState,
+                RoomOwnerId: @Model.RoomOwnerId,
+                UsersAmount: @Model.UsersAmount
+            };
+            model = JSON.stringify(model);
+            console.log(model);
+
+            $.ajax({
+                type: 'post',
+                url: 'http://localhost:58128/api/RoomApi/connecttoroomasync',
+                data: model,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json"
+
+            }).done(function(model) {
+
+            }).fail(function(err) {
+            });
+        }
+
+        function ChangeGameState(gameState) {
+            var model =
+            {
+                RoomId: @Model.RoomId,
+                GameType: @Model.GameType,
+                GameState: gameState,
+                RoomOwnerId: @Model.RoomOwnerId,
+                UsersAmount: @Model.UsersAmount
+            };
+        };
+
+        $("#game-board").fadeIn(1000);
+        model = JSON.stringify(model);
+
+        $.ajax({
+            type: 'put',
+            url: 'http://localhost:58128/api/RoomApi/changegamestateasync',
+            data: model,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json"
+
+        }).done(function(model) {
+
+        }).fail(function(err) {
+        });
+
+
+        //TICATC
+        //Global Variables
+        var clientMarkType = "X";
+        var painted;
+        var content;
+        var winningCombinations;
+        var turn = 0;
+        var thebutton;
+        var c;
+        var squaresFilled = 0;
+        var w;
+        var y;
+        var playerTurn = false;
+
+        //Instanciate Arrays
+        window.onload = function() {
+            testok();
+        }
+
+        function testok() {
+            painted = new Array();
+            content = new Array();
+            winningCombinations = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]
+            ];
+
+            for (var l = 0; l <= 8; l++) {
+                painted[l] = false;
+                content[l] = '';
+            }
+        }
+
+        //Game methods
+        function buttonClicked(buttonNumber) {
+            if (playerTurn === true) {
+                thebutton = "button" + buttonNumber;
+                c = document.getElementById(thebutton);
+
+                if (painted[buttonNumber - 1] === false) {
+                    if (turn % 2 == 0) {
+                        c.innerHTML = '<img src="/images/cross.jpg" width="70" height="70" />';
+                        content[buttonNumber - 1] = 'X';
+                    } else {
+                        c.innerHTML = '<img src="/images/circle.jpg" width="70" height="70" />';
+                        content[buttonNumber - 1] = 'O';
+                    }
+
+                    turn++;
+                    painted[buttonNumber - 1] = true;
+                    squaresFilled++;
+                    connection.send("SendGameData", false, buttonNumber);
+                    checkForWinners(content[buttonNumber - 1]);
+                    playerTurn = false;
+                    if (squaresFilled == 9) {
+                        $('#discussion').append('<li><strong>Gra zakonczona!</strong></li>');
+                        testok();
+                    }
+
+                } else {
+                    $('#discussion').append('<li><strong>To Pole jest juz zajete!</strong></li>');
+                }
+            } else {
+                $('#discussion').append('<li><strong>Poczekaj na swoją kolej!</strong></li>');
+            }
+        }
+
+
+        function checkForWinners(symbol) {
+
+            for (var a = 0; a < winningCombinations.length; a++) {
+                if (content[winningCombinations[a][0]] == symbol &&
+                    content[winningCombinations[a][1]] == symbol &&
+                    content[winningCombinations[a][2]] == symbol) {
+                    alert(symbol + " WON!");
+                    playAgain();
+                }
+            }
+        }
+
+        function playAgain() {
+            y = confirm("PLAY AGAIN?");
+            if (y == true) {
+                alert("kk");
+                testok();
+            } else {
+                alert("eloo");
+            }
+        }
+    </script>
+}
+
+</body>
+</html>

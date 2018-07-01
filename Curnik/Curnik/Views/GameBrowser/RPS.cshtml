@@ -1,0 +1,42 @@
+﻿@using Curnik.Enums;
+@model List<Curnik.Models.Database.Rooms>
+@{
+    ViewData["Title"] = "GameOne";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="jumbotron text-center" style="margin-top: 150px; height: 400px; font-family: 'Roboto', serif">
+
+    <h1>Pokoje</h1>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Numer Pokoju</th>
+                <th>Ilosc Graczy</th>
+            </tr>
+        </thead>
+        @foreach (var room in Model)
+        {
+            <tbody>
+                <tr>
+                    <td><strong>Pokój @room.RoomId</strong></td>
+                    <td>
+                        <label>
+                            @room.UsersAmount/2
+                        </label>
+                        @if (room.UsersAmount == 2)
+                        {
+                            <button class="btn btn-danger">Pokój pełny!</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-success" onclick="location.href = '@Url.Action("Rps", "Game", room)'">Dołącz</button>
+                        }
+                    </td>
+                </tr>
+            </tbody>
+        }
+    </table>
+    <button id="create-room-button" class="btn btn-primary" onclick="location.href='@Url.Action("CreateRoom", "GameBrowser", new{gameType = 1})'">Utwórz Nowy pokój</button>
+
+</div>

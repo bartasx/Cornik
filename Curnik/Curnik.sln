@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Curnik", "Curnik\Curnik.csproj", "{461BC1AC-98D6-48CC-929A-B33132C778BE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{461BC1AC-98D6-48CC-929A-B33132C778BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{461BC1AC-98D6-48CC-929A-B33132C778BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{461BC1AC-98D6-48CC-929A-B33132C778BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{461BC1AC-98D6-48CC-929A-B33132C778BE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E1A88511-5C33-4174-87B1-7C18E0B5F3FE}
+	EndGlobalSection
+EndGlobal

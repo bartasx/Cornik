@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Cornik</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+        <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="https://ajax.aspnetcdn.com/ajax/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <link href="~/css/animate.css" rel="stylesheet" />
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+</head>
+<body background="../images/main-bg.jpg">
+    <nav class="navbar navbar-default navbar-fixed-top" style="background-color: white">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a asp-area="" asp-controller="Home" asp-action="Index" class="navbar-brand" ><img style="max-width: 100px; margin-top: -10px; max-height: 50px;" src="../images/cornik_logo.png" /></a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <li><a asp-area="" asp-controller="UsersAccounts" asp-action="Logout">Wyloguj się</a></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p style="color: white">&copy; 2018 - Cornik</p>
+        </footer>
+    </div>
+
+    <script type="text/javascript" id="cookieprimary"
+            src="//cookieprimaryscript.com/js/cookieprimary.min.js"
+            data-bg="#645862"
+            data-fg="#FFFFFF"
+            data-message="Nasza strona internetowa używa plików cookies (tzw. ciasteczka) w celu podtrzymania sesji użytkowników"
+            data-link="#F1D600"
+            data-cookie="CookieprimaryScript"
+            data-text-align="left"
+            data-close-text="Rozumiem!!">
+    </script>
+    
+    @RenderSection("scripts", required: false)
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="~/js/authscript.js"></script>
+</body>
+</html>

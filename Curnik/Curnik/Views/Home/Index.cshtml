@@ -1,0 +1,107 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@model Curnik.ViewModels.LoginViewModel
+
+
+<div id="main-division" class="animated zoomIn">
+    @if (!User.Identity.IsAuthenticated)
+    {
+        <div class="jumbotron text-center" style="margin-top: 100px; background-color: white; font-family: 'Roboto', serif">
+            <img style="max-height: 250px; max-width: 250px;" src="images/cornik_logo.PNG" />
+            <p class="lead">Strona z grami online</p>
+            <hr class="my-4">
+            <p>Graj z ludźmi z całego świata!</p>
+            <p class="lead">
+                <button class="btn btn-primary btn-lg" id="sign-in-btn">ZALOGUJ SIĘ!</button>
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="text-center" style="margin-top: 50px;">
+            <label style="color: white; font-size: 50px;">Graczy Online: <a style="color: white; text-decoration: none;" id="users-amount"></a></label>
+        </div>
+    }
+
+    @if (User.Identity.IsAuthenticated)
+    {
+        <div class="jumbotron text-center" style="margin-top: 60px; height: 400px; background-color: white; font-family: 'Roboto', serif">
+            <div class="col-sm-5" style="margin: auto">
+                <p class="lead"><strong>Kółko i krzyżyk</strong></p>
+                <img src="~/images/ttt_logo.PNG" style="width: 50px; height: 50px;" />
+                <li style="margin-bottom: 20px; font-size: 15px;">
+                    Gra strategiczna rozgrywana przez dwóch graczy. Gracze obejmują pola na przemian dążąc do objęcia trzech pól w jednej linii,
+                    przy jednoczesnym uniemożliwieniu tego samego przeciwnikowi. Pole może być objęte przez jednego gracza i nie zmienia swego właściciela przez cały przebieg gry.
+                    Gra odbywa się na polu o wymiarach 3x3.
+                </li>
+
+                <button onclick="location.href = '@Url.Action("TicTacToe", "GameBrowser")'" class="btn btn-primary">Zagraj teraz</button>
+            </div>
+
+            <div class="col-sm-5" style="margin-left: 100px;">
+                <p><strong>Papier kamień nożyce</strong></p>
+                <img src="~/images/rps_logo.jpg" style="width: 50px; height: 50px;" />
+                <li style="margin-bottom: 20px; font-size: 15px;">
+                    Gra składa się z kolejnych tur. W każdej turze obydwaj gracze, na umówiony sygnał, szybko wystawiają przed siebie dłoń, pokazującą symbol papieru,
+                    kamienia lub nożyc. Gracz, który pokazał silniejszy symbol, otrzymuje jeden punkt. W przypadku pokazania dwóch takich samych symboli następuje remis –
+                    punktu brak.
+                </li>
+                <button onclick="location.href = '@Url.Action("Rps", "GameBrowser")'" class="btn btn-primary">Zagraj teraz</button>
+            </div>
+        </div>
+    }
+</div>
+
+
+<div class="modal fade" id="sign-in-form" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h2 class="modal-title text-center"><strong>Zaloguj się!</strong></h2>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <form asp-action="LoginUser" asp-controller="UsersAccounts" method="post">
+                        <div asp-validation-summary="ModelOnly"></div>
+                        <div>
+                            <input id="username-box" class="form-control center-block" asp-for="Username" style="max-width: 300px; margin-bottom: 20px" placeholder="Login" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <input id="password-box" class="form-control center-block" asp-for="Password" style="max-width: 300px; margin-bottom: 20px" type="password" placeholder="Password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                        <div class="checkbox">
+                            <label><input type="checkbox" asp-for="RememberMe" value="">Zapamietaj mnie</label>
+                        </div>
+                        <button id="login-button" class="btn btn-primary">Zaloguj się</button>
+                    </form>
+                    <br />
+                    <a asp-controller="Home" asp-action="Register">Nie masz Konta?</a>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts
+    {
+    <script>
+        $(document).ready(function () {
+            $("#sign-in-btn").click(function () {
+                $("#main-division").removeClass("zoomIn").addClass("rotateOut");
+                $("#sign-in-form").addClass("animated rotateIn").modal('show');
+            });
+
+            $('#sign-in-form').on('hidden.bs.modal', function () {
+                $("#main-division").addClass("zoomIn");
+            });
+        });
+    </script>
+}
